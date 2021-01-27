@@ -7,6 +7,8 @@ import os, math, time, collections, numpy as np
 3 = INFO, WARNING, and ERROR messages are not printed
 Disable Logs for now '''
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
 import tensorflow as tf
 from tensorflow.python.util import deprecation
 deprecation._PRINT_DEPRECATION_WARNINGS = False

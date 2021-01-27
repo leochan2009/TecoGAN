@@ -180,15 +180,23 @@ def loadHR(FLAGS, tar_size):
 
         image_list_HR_r = [[] for _ in range( FLAGS.RNN_N )] # all empty lists
         
-        for dir_i in range(FLAGS.str_dir, FLAGS.end_dir+1):
-            inputDir = os.path.join( FLAGS.input_video_dir, '%s_%04d' %(FLAGS.input_video_pre, dir_i) )
-            if (os.path.exists(inputDir)): # the following names are hard coded
-                if not os.path.exists(os.path.join(inputDir ,'col_high_%04d.png' % FLAGS.max_frm) ):
-                    print("Skip %s, since foler doesn't contain enough frames!" % inputDir)
-                    continue
-                for fi in range( FLAGS.RNN_N ):
-                    image_list_HR_r[fi] += [ os.path.join(inputDir ,'col_high_%04d.png' % frame_i ) 
-                                        for frame_i in range(fi, FLAGS.max_frm - FLAGS.RNN_N + fi + 1 )]
+        # for dir_i in range(FLAGS.str_dir, FLAGS.end_dir+1):
+        #     inputDir = os.path.join( FLAGS.input_video_dir, '%s_%04d' %(FLAGS.input_video_pre, dir_i) )
+        #     if (os.path.exists(inputDir)): # the following names are hard coded
+        #         if not os.path.exists(os.path.join(inputDir ,'col_high_%04d.png' % FLAGS.max_frm) ):
+        #             print("Skip %s, since foler doesn't contain enough frames!" % inputDir)
+        #             continue
+        #         for fi in range( FLAGS.RNN_N ):
+        #             image_list_HR_r[fi] += [ os.path.join(inputDir ,'col_high_%04d.png' % frame_i )
+        #                                 for frame_i in range(fi, FLAGS.max_frm - FLAGS.RNN_N + fi + 1 )]
+        for inputDir in os.listdir(FLAGS.input_video_dir):
+            if not os.path.exists(os.path.join(FLAGS.input_video_dir, inputDir, '%04d.png' % FLAGS.max_frm)):
+                print("Skip %s, since foler doesn't contain enough frames!" % inputDir)
+                continue
+            for fi in range( FLAGS.RNN_N ):
+                image_list_HR_r[fi] += [ os.path.join(FLAGS.input_video_dir, inputDir ,'%04d.png' % frame_i )
+                                    for frame_i in range(fi, FLAGS.max_frm - FLAGS.RNN_N + fi + 1 )]
+
         
         num_image_list_HR_t_cur = len(image_list_HR_r[0])
         if num_image_list_HR_t_cur==0:

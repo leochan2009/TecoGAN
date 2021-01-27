@@ -67,7 +67,7 @@ if( runcase == 0 ): # download inference data, trained models
 elif( runcase == 1 ): # inference a trained model
     
     dirstr = './results/' # the place to save the results
-    testpre = ['calendar'] # the test cases
+    testpre = ['foliage'] # the test cases
 
     if (not os.path.exists(dirstr)): os.mkdir(dirstr)
     
@@ -132,12 +132,12 @@ elif( runcase == 3 ): # Train TecoGAN
         cmd0 += "unzip model/ofrvsr.zip -d model; rm model/ofrvsr.zip"
         subprocess.call(cmd0, shell=True)
     
-    TrainingDataPath = "/mnt/netdisk/video_data/" 
+    TrainingDataPath = "./HR_owndata" #"/mnt/netdisk/video_data/"
     
     '''Prepare Training Folder'''
     # path appendix, manually define it, or use the current datetime, now_str = "mm-dd-hh"
-    now_str = datetime.datetime.now().strftime("%m-%d-%H")
-    train_dir = folder_check("ex_TecoGAN%s/"%now_str)
+    now_str = datetime.datetime.now().strftime("%m-%d-%H-%M")
+    train_dir = "ex_TecoGAN%s/"%now_str #folder_check("ex_TecoGAN%s/"%now_str)
     # train TecoGAN, loss = l2 + VGG54 loss + A spatio-temporal Discriminator
     cmd1 = ["python3", "main.py",
         "--cudaID", "0", # set the cudaID here to use only one GPU
@@ -274,7 +274,7 @@ elif( runcase == 4 ): # Train FRVSR, loss = l2 warp + l2 content
     TrainingDataPath = "/mnt/netdisk/video_data/"
     cmd1 += [
         "--input_video_dir", TrainingDataPath, 
-        "--input_video_pre", "scene",
+        "--input_video_pre", "",
         "--str_dir", "2000",
         "--end_dir", "2250",
         "--end_dir_val", "2290",
