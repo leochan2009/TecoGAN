@@ -1,13 +1,13 @@
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
+import tf_slim as slim
 import pdb
 import keras
 
 import numpy as np, cv2 as cv, scipy
 from scipy import signal
 import collections
-from tensorflow_core.python.ops import summary_op_util
-from tensorflow_core.python.distribute.summary_op_util import skip_summary
+from tensorflow.python.ops import summary_op_util
+from tensorflow.python.distribute.summary_op_util import skip_summary
 ### tensorflow functions ######################################################
 
 def preprocess(image):
@@ -34,46 +34,46 @@ def deprocessLR(image):
 # Define the convolution transpose building block
 def conv2_tran(batch_input, kernel=3, output_channel=64, stride=1, use_bias=True, scope='conv'):
     # kernel: An integer specifying the width and height of the 2D convolution window
-    with tf.variable_scope(scope):
+    with tf.compat.v1.variable_scope(scope):
         if use_bias:
             return slim.conv2d_transpose(batch_input, output_channel, [kernel, kernel], stride, 'SAME', data_format='NHWC',
-                            activation_fn=None, weights_initializer=tf.contrib.layers.xavier_initializer())
+                            activation_fn=None, weights_initializer=tf.initializers.glorot_uniform())
         else:
             return slim.conv2d_transpose(batch_input, output_channel, [kernel, kernel], stride, 'SAME', data_format='NHWC',
-                            activation_fn=None, weights_initializer=tf.contrib.layers.xavier_initializer(),
+                            activation_fn=None, weights_initializer=tf.initializers.glorot_uniform(),
                             biases_initializer=None)
 
 # Define the convolution building block
 def conv2(batch_input, kernel=3, output_channel=64, stride=1, use_bias=True, scope='conv'):
     # kernel: An integer specifying the width and height of the 2D convolution window
-    with tf.variable_scope(scope):
+    with tf.compat.v1.variable_scope(scope):
         if use_bias:
             return slim.conv2d(batch_input, output_channel, [kernel, kernel], stride, 'SAME', data_format='NHWC',
-                            activation_fn=None, weights_initializer=tf.contrib.layers.xavier_initializer())
+                            activation_fn=None, weights_initializer=tf.initializers.glorot_uniform())
         else:
             return slim.conv2d(batch_input, output_channel, [kernel, kernel], stride, 'SAME', data_format='NHWC',
-                            activation_fn=None, weights_initializer=tf.contrib.layers.xavier_initializer(),
+                            activation_fn=None, weights_initializer=tf.initializers.glorot_uniform(),
                             biases_initializer=None)
 
 
 def conv2_NCHW(batch_input, kernel=3, output_channel=64, stride=1, use_bias=True, scope='conv_NCHW'):
     # Use NCWH to speed up the inference
     # kernel: list of 2 integer specifying the width and height of the 2D convolution window
-    with tf.variable_scope(scope):
+    with tf.compat.v1.variable_scope(scope):
         if use_bias:
             return slim.conv2d(batch_input, output_channel, [kernel, kernel], stride, 'SAME', data_format='NCWH',
-                               activation_fn=None, weights_initializer=tf.contrib.layers.xavier_initializer())
+                               activation_fn=None, weights_initializer=tf.compat.v1.contrib.layers.xavier_initializer())
         else:
             return slim.conv2d(batch_input, output_channel, [kernel, kernel], stride, 'SAME', data_format='NCWH',
-                               activation_fn=None, weights_initializer=tf.contrib.layers.xavier_initializer(),
+                               activation_fn=None, weights_initializer=tf.compat.v1.contrib.layers.xavier_initializer(),
                                biases_initializer=None)
 
 
 # Define our tensorflow version PRelu
 def prelu_tf(inputs, name='Prelu'):
-    with tf.variable_scope(name):
+    with tf.compat.v1.variable_scope(name):
         alphas = tf.get_variable('alpha', inputs.get_shape()[-1], initializer=tf.zeros_initializer(), \
-            collections=[tf.GraphKeys.GLOBAL_VARIABLES, tf.GraphKeys.TRAINABLE_VARIABLES, tf.GraphKeys.MODEL_VARIABLES ],dtype=tf.float32)
+            collections=[tf.compat.v1.GraphKeys.GLOBAL_VARIABLES, tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, tf.compat.v1.GraphKeys.MODEL_VARIABLES ],dtype=tf.float32)
     pos = tf.nn.relu(inputs)
     neg = alphas * (inputs - abs(inputs)) * 0.5
 
@@ -86,7 +86,7 @@ def lrelu(inputs, alpha):
 
 
 def batchnorm(inputs, is_training):
-    return slim.batch_norm(inputs, decay=0.9, epsilon=0.001, updates_collections=tf.GraphKeys.UPDATE_OPS,
+    return slim.batch_norm(inputs, decay=0.9, epsilon=0.001, updates_collections=tf.compat.v1.GraphKeys.UPDATE_OPS,
                         scale=False, fused=True, is_training=is_training)
 
 def maxpool(inputs, scope='maxpool'):
@@ -95,10 +95,10 @@ def maxpool(inputs, scope='maxpool'):
 # Our dense layer
 def denselayer(inputs, output_size):
     # Rachel todo, put it to Model variable_scope
-    denseLayer = tf.layers.Dense(output_size, activation=None, kernel_initializer=tf.contrib.layers.xavier_initializer())
+    denseLayer = tf.keras.layers.Dense(output_size, activation=None, kernel_initializer=tf.initializers.glorot_uniform())
     output = denseLayer.apply(inputs)
-    tf.add_to_collection( name=tf.GraphKeys.MODEL_VARIABLES, value=denseLayer.kernel )
-    #output = tf.layers.dense(inputs, output_size, activation=None, kernel_initializer=tf.contrib.layers.xavier_initializer())
+    tf.compat.v1.add_to_collection( name=tf.compat.v1.GraphKeys.MODEL_VARIABLES, value=denseLayer.kernel )
+    #output = tf.layers.dense(inputs, output_size, activation=None, kernel_initializer=tf.compat.v1.contrib.layers.xavier_initializer())
     
     return output
 
@@ -124,7 +124,7 @@ def pixelShuffler(inputs, scale=2):
     return output
     
 def upscale_four(inputs, scope='upscale_four'): # mimic the tensorflow bilinear-upscaling for a fix ratio of 4
-    with tf.variable_scope(scope):
+    with tf.compat.v1.variable_scope(scope):
         size = tf.shape(inputs)
         b = size[0]
         h = size[1]
@@ -170,7 +170,7 @@ def bicubic_four(inputs, scope='bicubic_four'):
         **Parallel Catmull-Rom Spline Interpolation Algorithm for Image Zooming Based on CUDA*[Wu et. al.]**
     '''
     
-    with tf.variable_scope(scope):
+    with tf.compat.v1.variable_scope(scope):
         size = tf.shape(inputs)
         b = size[0]
         h = size[1]
@@ -311,7 +311,7 @@ def vgg_19(inputs,
   Returns:
     the last op containing the log predictions and end_points dict.
   """
-  with tf.variable_scope(scope, 'vgg_19', [inputs], reuse=reuse) as sc:
+  with tf.compat.v1.variable_scope(scope, 'vgg_19', [inputs], reuse=reuse) as sc:
     end_points_collection = sc.name + '_end_points'
     # Collect outputs for conv2d, fully_connected and max_pool2d.
     with slim.arg_scope([slim.conv2d, slim.fully_connected, slim.max_pool2d],
@@ -371,7 +371,7 @@ def get_existing_from_ckpt(ckpt, var_list=None, rest_zero=False, print_level=1):
     reader = tf.train.load_checkpoint(ckpt)
     ops = []
     if(var_list is None):
-        var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+        var_list = tf.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)
     for var in var_list:
         tensor_name = var.name.split(':')[0]
         if reader.has_tensor(tensor_name):
@@ -494,8 +494,8 @@ def gif_summary(name, tensor, max_outputs, fps, collections=None, family=None):
         channels]` where `channels` is 1 or 3.
       max_outputs: Max number of batch elements to generate gifs for.
       fps: frames per second of the animation
-      collections: Optional list of tf.GraphKeys.  The collections to add the
-        summary to.  Defaults to [tf.GraphKeys.SUMMARIES]
+      collections: Optional list of tf.compat.v1.GraphKeys.  The collections to add the
+        summary to.  Defaults to [tf.compat.v1.GraphKeys.SUMMARIES]
       family: Optional; if provided, used as the prefix of the summary tag name,
         which controls the tab name used for display on Tensorboard.
     Returns:
@@ -507,13 +507,13 @@ def gif_summary(name, tensor, max_outputs, fps, collections=None, family=None):
     if skip_summary():
         return tf.constant("")
     with summary_op_util.summary_scope(name, family, values=[tensor]) as (tag, scope):
-          val = tf.py_func(
+          val = tf.compat.v1.py_func(
               py_gif_summary,
               [tag, tensor, max_outputs, fps],
               tf.string,
               stateful=False,
               name=scope)
-          summary_op_util.collect(val, collections, [tf.GraphKeys.SUMMARIES])
+          summary_op_util.collect(val, collections, [tf.compat.v1.GraphKeys.SUMMARIES])
     return val
 
 
